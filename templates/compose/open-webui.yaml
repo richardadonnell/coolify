@@ -21,5 +21,11 @@ services:
       interval: 5s
       timeout: 30s
       retries: 10
-volumes:
-  open-webui: null
+    depends_on:
+      - pipelines
+  pipelines:
+    image: "ghcr.io/open-webui/pipelines:main"
+    volumes:
+      - "pipelines:/app/pipelines"
+    environment:
+      - PIPELINES_API_KEY=0p3n-w3bu!
