@@ -28,4 +28,4 @@ services:
     volumes:
       - "pipelines:/app/pipelines"
     environment:
-      - PIPELINES_API_KEY=0p3n-w3bu!
+      - PIPELINES_API_KEY=${SERVICE_PASSWORD_PIPELINES}
