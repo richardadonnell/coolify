@@ -1,65 +1,57 @@
+# documentation: https://www.inngest.com/docs/self-hosting
+# slogan: Inngest is an event-driven durable execution platform for building reliable workflows.
+# category: automation
+# tags: inngest, workflow, durable-execution, background-jobs, event-driven, queue
+# logo: svgs/inngest-dark.svg
+# port: 8288
+
 services:
   inngest:
     image: inngest/inngest
     command: "inngest start"
-    ports:
-      - "8288:8288"
-      - "8289:8289"
     environment:
-      - INNGEST_EVENT_KEY=your_event_key_here # Must be hex string with even number of chars
-      - INNGEST_SIGNING_KEY=your_signing_key_here # Must be hex string with even number of chars
-      - INNGEST_POSTGRES_URI=postgres://inngest:password@postgres:5432/inngest
-      - INNGEST_REDIS_URI=redis://redis:6379
+      - SERVICE_URL_INNGEST_8288
+      - SERVICE_HEX_32_EVENTKEY
+      - SERVICE_HEX_32_SIGNINGKEY
+      - INNGEST_EVENT_KEY=${SERVICE_HEX_32_EVENTKEY}
+      - INNGEST_SIGNING_KEY=${SERVICE_HEX_32_SIGNINGKEY}
+      - INNGEST_POSTGRES_URI=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgres:5432/${POSTGRES_DB:-inngest}
+      - INNGEST_REDIS_URI=redis://:$SERVICE_PASSWORD_REDIS@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - inngest-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8288/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8288/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   postgres:
-    image: postgres:17
+    image: postgres:17-alpine
     environment:
-      - POSTGRES_DB=inngest
-      - POSTGRES_USER=inngest
-      - POSTGRES_PASSWORD=password
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB=${POSTGRES_DB:-inngest}
+      - POSTGRES_USER=$SERVICE_USER_POSTGRES
+      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - inngest-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U inngest -d inngest"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: ["sh", "-c", "redis-server --requirepass \"$SERVICE_PASSWORD_REDIS\""]
+    environment:
+      - SERVICE_PASSWORD_REDIS
     volumes:
       - redis_data:/data
-    networks:
-      - inngest-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "$SERVICE_PASSWORD_REDIS", "PING"]
       interval: 5s
       timeout: 3s
       retries: 5
-
-volumes:
-  postgres_data:
-  redis_data:
-
-networks:
-  inngest-network:
-    driver: bridge
