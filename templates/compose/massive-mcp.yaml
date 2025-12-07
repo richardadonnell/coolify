@@ -1,0 +1,36 @@
+# documentation: https://github.com/massive-com/mcp_massive
+# slogan: MCP server for Massive.com Financial Market Data API
+# category: ai
+# tags: mcp, ai, finance, stocks, crypto, forex, options, market-data, llm
+# logo: svgs/mcp.svg
+# port: 8000
+
+services:
+  mcp-massive:
+    build:
+      context: https://github.com/massive-com/mcp_massive.git
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_URL_MCPMASSIVE_8000
+      - MASSIVE_API_KEY=${MASSIVE_API_KEY}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        uv run python << 'EOF'
+        import os
+        from mcp_massive.server import poly_mcp
+        import uvicorn
+
+        if os.environ.get('MASSIVE_API_KEY'):
+            print('Starting Massive MCP server with API key configured.')
+        else:
+            print('Warning: MASSIVE_API_KEY environment variable not set.')
+
+        app = poly_mcp.streamable_http_app()
+        uvicorn.run(app, host='0.0.0.0', port=8000)
+        EOF
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('localhost', 8000)); s.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
