@@ -38,3 +38,6 @@ docker/coolify-realtime/node_modules
 .DS_Store
 CHANGELOG.md
 /.workspaces
+.omc/project-memory.json
+.omc/state/hud-stdin-cache.json
+.omc/state/sessions/1a3015b7-5079-4d19-a184-a7567ca0156c/hud-state.json
