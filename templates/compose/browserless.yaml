@@ -7,7 +7,9 @@
 
 services:
   browserless:
-    image: ghcr.io/browserless/chromium
+    build:
+      context: https://github.com/richardadonnell/browserless.git
+      dockerfile: docker/chromium/Dockerfile
     environment:
       - SERVICE_URL_BROWSERLESS_3000
       - TOKEN=$SERVICE_PASSWORD_BROWSERLESS
